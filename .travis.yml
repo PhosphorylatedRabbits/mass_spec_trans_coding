@@ -1,0 +1,16 @@
+dist: xenial
+sudo: required
+language: python
+python:
+  - "3.6"
+
+
+install:
+  # install the egg
+  - pip install -U pip
+  - pip install -r requirements.txt
+  - pip install -e .
+
+
+script:
+  - python3 -m unittest discover -s mstc -p "test_*" -v

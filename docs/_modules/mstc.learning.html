@@ -1,0 +1,256 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mstc.learning package &mdash; mstc 0.2 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mstc.processing package" href="mstc.processing.html" />
+    <link rel="prev" title="mstc package" href="mstc.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> mstc
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="modules.html">mstc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mstc.html">mstc package</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">mstc.learning package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-mstc.learning.pipeline">mstc.learning.pipeline module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-mstc.learning">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mstc.processing.html">mstc.processing package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">mstc</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">mstc</a> &raquo;</li>
+        
+          <li><a href="mstc.html">mstc package</a> &raquo;</li>
+        
+      <li>mstc.learning package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/_modules/mstc.learning.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="mstc-learning-package">
+<h1>mstc.learning package<a class="headerlink" href="#mstc-learning-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mstc.learning.pipeline">
+<span id="mstc-learning-pipeline-module"></span><h2>mstc.learning.pipeline module<a class="headerlink" href="#module-mstc.learning.pipeline" title="Permalink to this headline">¶</a></h2>
+<p>Components for cross-validation and model evaluation.</p>
+<dl class="function">
+<dt id="mstc.learning.pipeline.generate_cross_validation_pipeline">
+<code class="sig-name descname">generate_cross_validation_pipeline</code><span class="sig-paren">(</span><em class="sig-param">classifier</em>, <em class="sig-param">parameter_grid</em>, <em class="sig-param">folds=5</em>, <em class="sig-param">repeats=1</em>, <em class="sig-param">random_state=12345</em>, <em class="sig-param">number_of_jobs=1</em>, <em class="sig-param">scoring=None</em>, <em class="sig-param">refit=True</em><span class="sig-paren">)</span><a class="reference internal" href="mstc/learning/pipeline.html#generate_cross_validation_pipeline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mstc.learning.pipeline.generate_cross_validation_pipeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate a classifier trained with cross validation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classifier</strong> (<em>sklearn.base.ClassifierMixin</em>) – a classifier.</p></li>
+<li><p><strong>parameter_grid</strong> (<em>dict</em>) – grid of parameter.</p></li>
+<li><p><strong>folds</strong> (<em>int</em>) – number of stratified cross validation folds,
+defaults to 5.</p></li>
+<li><p><strong>repeats</strong> (<em>int</em>) – number of cross validation repeats,
+defaults to 1.</p></li>
+<li><p><strong>random_state</strong> (<em>int</em>) – random state, defaults to 12345.</p></li>
+<li><p><strong>number_of_jobs</strong> (<em>int</em>) – number of jobs to run in parallel, defaults to 1.
+-1 means using all processors.</p></li>
+<li><p><strong>scoring</strong> (<em>string</em><em>, </em><em>callable</em><em>, </em><em>list/tuple</em><em>, </em><em>dict</em><em> or </em><em>None</em>) – socring function
+or functions to evaluate predictions on the test set.
+Defaults to None to use the classifier default score method.</p></li>
+<li><p><strong>refit</strong> (<em>bool</em><em>, </em><em>string</em>) – whether to refit with best estimator. For
+multiple metric evaluation, this needs to be a string denoting the
+scorer is used to find the best parameters
+for refitting the estimator at the end.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>an evaluation report.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mstc.learning">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mstc.learning" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mstc.processing.html" class="btn btn-neutral float-right" title="mstc.processing package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="mstc.html" class="btn btn-neutral float-left" title="mstc package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, PhosphorylatedRabbits team
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

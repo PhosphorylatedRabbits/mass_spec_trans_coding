@@ -1,0 +1,17 @@
+name: mstc
+channels:
+  - anaconda
+  - conda-forge
+dependencies:
+ - plac=1.0.0
+ - scipy>=1.1.0
+ - imageio=2.5.0
+ - matplotlib=3.0.3
+ - seaborn=0.9.0
+ - scikit-learn>=0.19.1
+ - scikit-image=0.15.0
+ - dask>=1.1.5
+ - xarray=0.12.1
+ - tensorflow>=1.13.1,<2.0
+ - tensorflow-hub=0.4.0
+ - xgboost=0.82

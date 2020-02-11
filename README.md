@@ -34,6 +34,7 @@ The MS raw data spans intensity peaks on the m/z axis at given points along the 
 The data is usually analysed with specialized tools to calculate quantities of peptides. These tools work junction with "spectral libraries" which contains experience of which measured fragment ions map to which peptides and therefore allows quantification of the respective protein via the measured amount of the ions.
 
 ### The mstc package
+[![Build Status](https://travis-ci.com/PhosphorylatedRabbits/mass_spec_trans_coding.svg?branch=master)](https://travis-ci.com/PhosphorylatedRabbits/mass_spec_trans_coding)  
 There is [Documention](https://phosphorylatedrabbits.github.io/mass_spec_trans_coding/) of the package code.
 
 The processing subpackage defines operations to define a processing pipeline from reading, encoding, transforming, etc.
@@ -131,7 +132,7 @@ Available are
 
 Whereas
 - original MS mXML data
-- protein/peptide expression values
+- protein/peptide expression values  
 cannot be made available publicly.
 
 ### References

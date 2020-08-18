@@ -108,9 +108,10 @@ df = df.query(
 
 # order is modules sorted for median AUC for all_modalities
 module_group = df.query("modality == 'all_modalities'").groupby('module')
-module_order = module_group.median().sort_values(
+module_medians = module_group.median().sort_values(
     by='AUC', ascending=False
-).index
+)
+module_order = module_medians.index
 
 df['module'] = df['module'].astype('category').cat.set_categories(module_order)
 df = df.sort_values(['module', 'AUC'], ascending=[True, False])

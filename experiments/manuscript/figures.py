@@ -33,6 +33,12 @@ def manuscript_sizes(denominator=1, text_width=5.5):
     return fig_width, fig_height
 
 
+#%%
+if 'get_ipython' in dir():
+    # in case interactive session was moved to __file__ dir
+    %cd ../..
+#%%
+
 DF_PATH = os.path.join('experiments/manuscript/',
                        'classification_results.csv')
 swathes_path = 'experiments/manuscript/ms2_precursors.csv'
@@ -111,8 +117,10 @@ df = df.sort_values(['module', 'AUC'], ascending=[True, False])
 
 # only all_modalities
 df_ = df.query("modality == 'all_modalities'")
-
-
+df__ = df.query("modality == 'ms1_only'")
+df__['module'].cat.remove_categories(
+    ['proteins', 'peptides3', 'peptides4'], inplace=True
+)
 #%% [markdown]
 """
 # plotting settings
@@ -180,6 +188,21 @@ g.set_xticklabels(labels, rotation=90)
 
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
+#%% like above, but MS1 only (same order as MS2)
+figure_name = 'median_module_ms1_only.pdf'
+fig_width, fig_height = manuscript_sizes(denominator=2, text_width=5.5)
+logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
+
+fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+g = sns.boxplot(
+    ax=ax, x="module", y="AUC",
+    data=df__, flierprops={'markersize': 0.5}
+)
+loc, labels = plt.xticks()
+g.set_xticklabels(labels, rotation=90)
+
+plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
+
 
 #%% paper 2b
 # RandomForrest is consitently worse, XGBoost too but ok with proteomics
@@ -197,6 +220,26 @@ g = sns.scatterplot(
     markers=['s', 'o', 'v'], edgecolor='face',   # linewidths=0.01  # no change
 )
 g.set_xticklabels(module_order, rotation=90)
+
+plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
+
+#%% like above but MS1 only (same order as MS2)
+# RandomForrest is consitently worse, XGBoost too but ok with proteomics
+# 512x512 better than 2048x2048
+figure_name = 'classifiers_module_ms1_only.pdf'
+fig_width, fig_height = manuscript_sizes(denominator=2, text_width=5.5)
+logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
+
+# with sns.axes_style('white'):
+fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+g = sns.scatterplot(
+    ax=ax,
+    x="module", y="AUC", data=df__,
+    hue='classifier', palette='colorblind', style='cohort_identifier',
+    markers=['s', 'o', 'v'], edgecolor='face',   # linewidths=0.01  # no change
+)
+
+g.set_xticklabels(g.get_xticklabels(), rotation=90)  # [a._text for a in g.get_xticklabels()]
 
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
@@ -361,16 +404,42 @@ encoder_characteristics = table.iloc[0].unstack(level=0)[[
     'encoded_image_size_height', 'encoded_features_size'
 ]]
 
-#%% same for each classifier
+#%% same for each classifier, pick number from one
 varying_features = table.loc['LogisticRegression', 'non_varying_features'].T
-# varying_features.columns = varying_features.columns.to_flat_index()
+
+
+#%% percentages
+percent_ms1 = varying_features['ms1_only'].divide(
+    encoder_characteristics['encoded_features_size'], axis=0
+) * 100
+percent_ms1.columns = pd.MultiIndex.from_product([['ms1_only'], percent_ms1.columns])
+
+percent_all = varying_features['all_modalities'].divide(
+    # with ms2 101 times the total possible features
+    encoder_characteristics['encoded_features_size'] * 101, axis=0
+) * 100
+percent_all.columns = pd.MultiIndex.from_product([['all_modalities'], percent_all.columns])
+
+percent_df = pd.concat([percent_ms1, percent_all], axis=1).astype(int)
+
+#%% merge percent
+for column in varying_features.columns:
+    varying_features[column] = (
+        varying_features[column].map(str)
+        + " ("
+        + percent_df[column].map(str)
+        + '%)'
+    )
+#%%
+encoder_table = pd.concat([
+    encoder_characteristics.astype(int), varying_features,
+] , axis=1)
+encoder_table
+#%%
+print(encoder_table.to_latex())
+
 
 #%%
-print(
-    pd.concat([encoder_characteristics, varying_features], axis=1).to_latex()
-)
-
-
 """
 # Swath sizes figure
 """

@@ -106,12 +106,34 @@ df = df.query(
     "(raw_image_size_width != '243.0') & (raw_image_size_width != '973.0')"
 )
 
+
+# architecture groups
+def assign_module(module_name):
+    module_group = module_name.split('_')[0]
+    if 'nasnet' in module_group or module_group == 'amoebanet':
+        module_group = 'archirecture search'
+    if module_group in ['proteins', 'peptides3', 'peptides4']:
+        module_group = 'proteomic'
+    return module_group
+
+
+df['architecture'] = df['module'].apply(assign_module)
+
 # order is modules sorted for median AUC for all_modalities
-module_group = df.query("modality == 'all_modalities'").groupby('module')
-module_medians = module_group.median().sort_values(
-    by='AUC', ascending=False
-)
+module_group = df.query("modality == 'all_modalities'").groupby('module')['AUC']
+module_medians = module_group.median().sort_values(ascending=False)
 module_order = module_medians.index
+module_medians_df = pd.concat([
+    module_medians,
+    module_group.std().rename('std'),
+], axis=1)
+module_medians_df['architecture'] = module_medians_df.index.map(assign_module)
+
+archs = module_medians_df['architecture'].unique()
+architecture_colors = pd.Series(
+    sns.color_palette(n_colors=len(archs)), index=archs
+)
+module_colors = module_medians_df['architecture'].map(architecture_colors)
 
 df['module'] = df['module'].astype('category').cat.set_categories(module_order)
 df = df.sort_values(['module', 'AUC'], ascending=[True, False])
@@ -119,9 +141,10 @@ df = df.sort_values(['module', 'AUC'], ascending=[True, False])
 # only all_modalities
 df_ = df.query("modality == 'all_modalities'")
 df__ = df.query("modality == 'ms1_only'")
-df__['module'].cat.remove_categories(
-    ['proteins', 'peptides3', 'peptides4'], inplace=True
-)
+# no ['proteins', 'peptides3', 'peptides4'] for ms1_only
+df__['module'].cat.remove_unused_categories(inplace=True)
+
+
 #%% [markdown]
 """
 # plotting settings
@@ -170,8 +193,52 @@ matplotlib.rcParams.update(params)
 
 #%% [markdown]
 """
+Numbers
+"""
+
+#%% max performance
+print('best overall\n', df.loc[df['AUC'].idxmax()])
+no_prot = df.query("module not in ['proteins', 'peptides3', 'peptides4']")
+no_prot['module'].cat.remove_unused_categories(inplace=True)
+print('best off-the-shelf\n', no_prot.loc[no_prot['AUC'].idxmax()])
+module_medians_df
+
+#%% MS1 vs all rank correlation
+indexed_auc = no_prot.set_index([
+    'modality', 'classifier', 'module', 'cohort_identifier', 'architecture'
+])['AUC']
+ms1_auc = indexed_auc['ms1_only']
+ms1_auc = ms1_auc.rename("ms1_only [AUC]")
+correlation_index = ms1_auc.index
+all_auc = indexed_auc['all_modalities'][correlation_index]
+all_auc = all_auc.rename("all_modalities [AUC]")
+# TODO decide on rank correlation metric
+
+correlation_df = pd.concat([ms1_auc, all_auc], axis=1).reset_index()
+correlation_df
+
+#%% [markdown]
+"""
 # Figures
 """
+#%% ms1 vs all auc correlation
+#  main result: encoder importance
+figure_name = 'correlation.pdf'
+fig_width, fig_height = manuscript_sizes(denominator=2, text_width=5.5)
+logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
+
+fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+g = sns.scatterplot(
+    ax=ax, x='all_modalities [AUC]', y='ms1_only [AUC]',
+    data=correlation_df,
+    hue='architecture', palette=architecture_colors.values[1:],
+    style='cohort_identifier',
+    # hue='module', style='classifier', size='cohort_identifier',
+    # markers=['s', 'o', 'v'],
+    edgecolor='face',
+)
+plt.axis('equal')
+plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
 #%% paper 2a
 #  main result: encoder importance
@@ -182,6 +249,7 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.boxplot(
     ax=ax, x="module", y="AUC",
+    hue='architecture', dodge=False, palette=architecture_colors.values,
     data=df_, flierprops={'markersize': 0.5}
 )
 loc, labels = plt.xticks()
@@ -197,6 +265,7 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.boxplot(
     ax=ax, x="module", y="AUC",
+    hue='architecture', dodge=False, palette=architecture_colors.values[1:],
     data=df__, flierprops={'markersize': 0.5}
 )
 loc, labels = plt.xticks()

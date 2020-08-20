@@ -197,15 +197,15 @@ Numbers
 """
 
 #%% 
-modalities_paired = df.set_index( # .query("cohort_identifier != 'proteomics'")
+modalities_paired = df.set_index(
     ['classifier', 'module', 'cohort_identifier', 'architecture']
 ).pivot(columns='modality')
 
 paired_module_groups = modalities_paired.groupby('module')
 module_stats_df = pd.concat([
-    paired_module_groups.median().loc[:,['AUC']].rename(columns={'AUC': 'median AUC'}),
-    paired_module_groups.mean().loc[:,['AUC']].rename(columns={'AUC': 'mean AUC'}),
-    paired_module_groups.std().loc[:,['AUC']].rename(columns={'AUC': 'standard deviation AUC'}),
+    paired_module_groups.median().loc[:, ['AUC']].rename(columns={'AUC': 'median AUC'}),
+    paired_module_groups.mean().loc[:, ['AUC']].rename(columns={'AUC': 'mean AUC'}),
+    paired_module_groups.std().loc[:, ['AUC']].rename(columns={'AUC': 'standard deviation AUC'}),
 ], axis=1)
 module_stats_df['architecture'] = module_stats_df.index.map(assign_module)
 
@@ -246,7 +246,6 @@ g = sns.scatterplot(
     data=correlation_df.reset_index(),
     hue='architecture', palette=architecture_colors.values[1:],
     style='cohort_identifier',
-    # hue='module', style='classifier', size='cohort_identifier',
     markers=['o', 'v'],
     edgecolor='face',
 )
@@ -347,26 +346,35 @@ plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 # 512x512 seems a bit better than 2048x2048
 figure_name = 'resolution_modalities.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=3, text_width=5.5)
-logger.info(f'{figure_name} sizes: {(2*fig_width, 2*fig_height)}')
+logger.info(f'{figure_name} sizes: {(2*fig_width, fig_height)}')
 
 # with sns.axes_style('white'):
-fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-g = sns.swarmplot(
-    ax=ax,
+# fig, ax = plt.subplots(figsize=(2*fig_width, fig_height))
+
+g = sns.catplot(
+    kind="swarm",
     x="resolution", y="AUC",
-    hue="modality", dodge=True,
+    hue="architecture",
+    col="modality",
     data=df.query("cohort_identifier != 'proteomics'").rename(
         columns={'cohort_identifier': 'resolution'}
     ),
-    s=2
+    s=3,
+    height=2*fig_height, aspect=(1.618/3),  # width=fig_width
+    # legend=False,
+    legend_out=True,
+    facet_kws={'gridspec_kws': {'wspace': 0.0001}}
 )
-ax.set_xticklabels([
-    item.get_text().replace('ppp1_raw_image_', '')
-    for item in ax.get_xticklabels()
-])
-plt.legend(markerscale=0.2)
+for axes in g.axes.flat:
+    # save space in axes title
+    axes.set_title(axes.get_title().split(' ')[-1])
+    # save space in x labels
+    axes.set_xticklabels([
+        item.get_text().replace('ppp1_raw_image_', '')
+        for item in axes.get_xticklabels()
+    ])
 
-plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
+# plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
 
 #%% [markdown]
@@ -383,17 +391,17 @@ alpha = 0.001
 
 
 #%% pairwise t-test all_modalities vs ms1
-modalities_paired = df.query("cohort_identifier != 'proteomics'").set_index(
-    ['classifier', 'module', 'cohort_identifier']
-).pivot(columns='modality')
+modalities_paired_no_prot = modalities_paired.query(
+    "cohort_identifier != 'proteomics'"
+)
 statistic, p_value = stats.ttest_rel(
-    modalities_paired.loc[:, ('AUC', 'all_modalities')].values,
-    modalities_paired.loc[:, ('AUC', 'ms1_only')].values,
+    modalities_paired_no_prot.loc[:, ('AUC', 'all_modalities')].values,
+    modalities_paired_no_prot.loc[:, ('AUC', 'ms1_only')].values,
 )
 
 modalities_delta = (
-    modalities_paired.xs('all_modalities', level='modality', axis=1) -
-    modalities_paired.xs('ms1_only', level='modality', axis=1)
+    modalities_paired_no_prot.xs('all_modalities', level='modality', axis=1) -
+    modalities_paired_no_prot.xs('ms1_only', level='modality', axis=1)
 ).reset_index()
 print(
     f't: {statistic}\n'

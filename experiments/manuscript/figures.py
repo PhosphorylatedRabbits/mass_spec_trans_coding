@@ -119,21 +119,12 @@ def assign_module(module_name):
 
 df['architecture'] = df['module'].apply(assign_module)
 
-# order is modules sorted for median AUC for all_modalities
+#%%
+#%% order is modules sorted for median AUC for all_modalities
 module_group = df.query("modality == 'all_modalities'").groupby('module')['AUC']
 module_medians = module_group.median().sort_values(ascending=False)
 module_order = module_medians.index
-module_medians_df = pd.concat([
-    module_medians,
-    module_group.std().rename('std'),
-], axis=1)
-module_medians_df['architecture'] = module_medians_df.index.map(assign_module)
 
-archs = module_medians_df['architecture'].unique()
-architecture_colors = pd.Series(
-    sns.color_palette(n_colors=len(archs)), index=archs
-)
-module_colors = module_medians_df['architecture'].map(architecture_colors)
 
 df['module'] = df['module'].astype('category').cat.set_categories(module_order)
 df = df.sort_values(['module', 'AUC'], ascending=[True, False])
@@ -149,6 +140,15 @@ df__['module'].cat.remove_unused_categories(inplace=True)
 """
 # plotting settings
 """
+#%% colors
+archs = df['architecture'].unique()
+architecture_colors = pd.Series(
+    sns.color_palette(n_colors=len(archs)), index=archs
+)
+module_colors = pd.Series(
+    module_order, index=module_order
+).map(lambda x: architecture_colors[assign_module(x)])
+
 #%%
 [(key, value) for key, value in plt.rcParamsDefault.items() if 'size' in key]
 #%%
@@ -196,47 +196,77 @@ matplotlib.rcParams.update(params)
 Numbers
 """
 
+#%% 
+modalities_paired = df.set_index( # .query("cohort_identifier != 'proteomics'")
+    ['classifier', 'module', 'cohort_identifier', 'architecture']
+).pivot(columns='modality')
+
+paired_module_groups = modalities_paired.groupby('module')
+module_stats_df = pd.concat([
+    paired_module_groups.median().loc[:,['AUC']].rename(columns={'AUC': 'median AUC'}),
+    paired_module_groups.mean().loc[:,['AUC']].rename(columns={'AUC': 'mean AUC'}),
+    paired_module_groups.std().loc[:,['AUC']].rename(columns={'AUC': 'standard deviation AUC'}),
+], axis=1)
+module_stats_df['architecture'] = module_stats_df.index.map(assign_module)
+
 #%% max performance
 print('best overall\n', df.loc[df['AUC'].idxmax()])
 no_prot = df.query("module not in ['proteins', 'peptides3', 'peptides4']")
 no_prot['module'].cat.remove_unused_categories(inplace=True)
 print('best off-the-shelf\n', no_prot.loc[no_prot['AUC'].idxmax()])
-module_medians_df
-
+print(module_stats_df.to_latex())
+module_stats_df
 #%% MS1 vs all rank correlation
-indexed_auc = no_prot.set_index([
-    'modality', 'classifier', 'module', 'cohort_identifier', 'architecture'
-])['AUC']
-ms1_auc = indexed_auc['ms1_only']
-ms1_auc = ms1_auc.rename("ms1_only [AUC]")
-correlation_index = ms1_auc.index
-all_auc = indexed_auc['all_modalities'][correlation_index]
-all_auc = all_auc.rename("all_modalities [AUC]")
-# TODO decide on rank correlation metric
-
-correlation_df = pd.concat([ms1_auc, all_auc], axis=1).reset_index()
-correlation_df
+# all values
+correlation_df = modalities_paired.query(
+    "cohort_identifier != 'proteomics'"
+)['AUC']
+print(
+    'all values Spearman rank correlation: ',
+    f'{correlation_df.corr(method="spearman").iloc[0, 1]}'
+)
+# median
+print(
+    'module median Spearman rank correlation: ',
+    f'{correlation_df.groupby("module").median().corr(method="spearman").iloc[0, 1]}'
+)
 
 #%% [markdown]
 """
 # Figures
 """
-#%% ms1 vs all auc correlation
-#  main result: encoder importance
+#%% ms1 vs all auc correlation all_values
 figure_name = 'correlation.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=2, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.scatterplot(
-    ax=ax, x='all_modalities [AUC]', y='ms1_only [AUC]',
-    data=correlation_df,
+    ax=ax, x='all_modalities', y='ms1_only',
+    data=correlation_df.reset_index(),
     hue='architecture', palette=architecture_colors.values[1:],
     style='cohort_identifier',
     # hue='module', style='classifier', size='cohort_identifier',
-    # markers=['s', 'o', 'v'],
+    markers=['o', 'v'],
     edgecolor='face',
 )
+g.set(xlabel='all_modalities [AUC]', ylabel='ms1_only [AUC]')
+plt.axis('equal')
+plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
+
+#%%
+figure_name = 'correlation_medians.pdf'
+fig_width, fig_height = manuscript_sizes(denominator=2, text_width=5.5)
+logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
+
+fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+g = sns.scatterplot(
+    ax=ax, x='all_modalities', y='ms1_only',
+    data=module_stats_df['median AUC'][3:],
+    hue=module_stats_df['architecture'][3:], palette=architecture_colors.values[1:],
+    edgecolor='face',
+)
+g.set(xlabel='all_modalities [AUC]', ylabel='ms1_only [AUC]')
 plt.axis('equal')
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 

@@ -420,7 +420,12 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 
-sns.distplot(modalities_delta['AUC'], kde=False, rug=True, ax=ax)
+sns.distplot(modalities_delta['AUC'], kde=False, ax=ax)  #  rug=True
+for arch, color in architecture_colors.iteritems():
+    # multicolored rug
+    sns.rugplot(
+        modalities_delta.query('architecture == @arch')['AUC'],
+        ax=ax, color=color)
 plt.xlabel(u'Δ AUC')
 plt.axvline(0, 0, 1)
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
@@ -484,7 +489,12 @@ fig_width, fig_height = manuscript_sizes(denominator=3, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-sns.distplot(cohort_delta['AUC'], kde=False, rug=True, ax=ax)
+sns.distplot(cohort_delta['AUC'], kde=False, ax=ax)  #  rug=True
+for arch, color in architecture_colors.iteritems():
+    # multicolored rug
+    sns.rugplot(
+        cohort_delta.query('architecture == @arch')['AUC'],
+        ax=ax, color=color)
 plt.xlabel(u'Δ AUC')
 plt.axvline(0, 0, 1)
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')

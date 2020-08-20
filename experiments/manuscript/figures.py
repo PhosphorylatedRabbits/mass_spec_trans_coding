@@ -12,6 +12,8 @@ import seaborn as sns
 from scipy import stats
 import logging
 
+from seaborn.miscplot import palplot
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger('figures')
 
@@ -354,7 +356,7 @@ logger.info(f'{figure_name} sizes: {(2*fig_width, fig_height)}')
 g = sns.catplot(
     kind="swarm",
     x="resolution", y="AUC",
-    hue="architecture",
+    hue='architecture', palette=architecture_colors.values[1:],
     col="modality",
     data=df.query("cohort_identifier != 'proteomics'").rename(
         columns={'cohort_identifier': 'resolution'}
@@ -374,7 +376,7 @@ for axes in g.axes.flat:
         for item in axes.get_xticklabels()
     ])
 
-# plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
+plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
 
 #%% [markdown]
@@ -462,7 +464,7 @@ plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
 #%% paired t-test
 cohort_paired = df.query("cohort_identifier != 'proteomics'").set_index(
-    ['classifier', 'module', 'modality']
+    ['classifier', 'module', 'modality', 'architecture']
 ).pivot(columns='cohort_identifier')
 statistic, p_value = stats.ttest_rel(
     cohort_paired.loc[:, ('AUC', 'ppp1_raw_image_512x512')].values,

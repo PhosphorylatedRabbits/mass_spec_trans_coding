@@ -1,6 +1,10 @@
 """Explore results with various plots."""
 
 #%%
+if 'get_ipython' in dir():
+    # in case interactive session was moved to __file__ dir
+    %cd ..
+#%%
 import os
 import glob
 import pandas as pd
@@ -17,6 +21,7 @@ def json_load(filepath):
 
 seed_dir = 'seed_7899463'
 
+# or where downloaded from Box
 DATA_DIR = os.path.join('data/classification_results',
                         seed_dir)
 

@@ -273,6 +273,35 @@ g.set(xlabel=f'all_modalities [{METRIC}]', ylabel=f'ms1_only [{METRIC}]')
 plt.axis('equal')
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
+#%% experiment combining figure 2
+figure_name = 'module_overlayed.pdf'
+fig_width, fig_height = manuscript_sizes(denominator=1, text_width=5.5)
+logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
+
+fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+g = sns.boxplot(
+    ax=ax, x="module", y=METRIC,
+    hue='architecture', dodge=False, palette=architecture_colors.values,
+    data=df_,
+    fliersize=0.0  # outliers shows by scatterplot
+)
+loc, labels = plt.xticks()
+g.set_xticklabels(labels, rotation=90)
+
+# `sns.choose_colorbrewer_palette('qualitative')` in a real notebook
+clfs_cols = sns.color_palette("Dark2", 8, 1.0)[3:-1]
+
+g = sns.scatterplot(
+    ax=ax,
+    x="module", y=METRIC, data=df_,
+    hue='classifier', palette=clfs_cols, style='cohort_identifier',
+    markers=['s', 'o', 'v'], linewidth=0.1,  edgecolor="grey",
+    # y_jitter=True  # non-functional in sns
+)
+g.set_xticklabels(module_order, rotation=90)
+
+plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
+
 #%% paper 2a
 #  main result: encoder importance
 figure_name = 'median_module.pdf'
@@ -378,8 +407,8 @@ for axes in g.axes.flat:
         for item in axes.get_xticklabels()
     ])
 
+# plt.gcf().set_size_inches(2*fig_width, fig_height)
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
-
 
 #%% [markdown]
 """

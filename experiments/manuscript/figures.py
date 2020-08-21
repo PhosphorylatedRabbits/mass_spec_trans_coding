@@ -68,9 +68,11 @@ drop_nets = [
 ]
 df = df_raw[df_raw["module"].apply(lambda x: x not in drop_nets)]
 
+METRIC = 'AUC'
 df = df[[
     'classifier',
-    'AUC',
+    METRIC,
+    # 'AUC',
     # 'Accuracy',
     # 'F1',
     # 'cv_index',
@@ -91,7 +93,6 @@ df = df[[
     # 'raw_image_size_height',
     'raw_image_size_width',
     'cohort_identifier',
-    # # only in rerun
     # 'Brier_Loss',
     # 'DP',
     # 'Log_Loss',
@@ -121,15 +122,15 @@ def assign_module(module_name):
 
 df['architecture'] = df['module'].apply(assign_module)
 
-#%%
+
 #%% order is modules sorted for median AUC for all_modalities
-module_group = df.query("modality == 'all_modalities'").groupby('module')['AUC']
+module_group = df.query("modality == 'all_modalities'").groupby('module')[METRIC]
 module_medians = module_group.median().sort_values(ascending=False)
 module_order = module_medians.index
 
 
 df['module'] = df['module'].astype('category').cat.set_categories(module_order)
-df = df.sort_values(['module', 'AUC'], ascending=[True, False])
+df = df.sort_values(['module', METRIC], ascending=[True, False])
 
 # only all_modalities
 df_ = df.query("modality == 'all_modalities'")
@@ -205,24 +206,24 @@ modalities_paired = df.set_index(
 
 paired_module_groups = modalities_paired.groupby('module')
 module_stats_df = pd.concat([
-    paired_module_groups.median().loc[:, ['AUC']].rename(columns={'AUC': 'median AUC'}),
-    paired_module_groups.mean().loc[:, ['AUC']].rename(columns={'AUC': 'mean AUC'}),
-    paired_module_groups.std().loc[:, ['AUC']].rename(columns={'AUC': 'standard deviation AUC'}),
+    paired_module_groups.median().loc[:, [METRIC]].rename(columns={METRIC: f'median {METRIC}'}),
+    paired_module_groups.mean().loc[:, [METRIC]].rename(columns={METRIC: f'mean {METRIC}'}),
+    paired_module_groups.std().loc[:, [METRIC]].rename(columns={METRIC: f'standard deviation {METRIC}'}),
 ], axis=1)
 module_stats_df['architecture'] = module_stats_df.index.map(assign_module)
 
 #%% max performance
-print('best overall\n', df.loc[df['AUC'].idxmax()])
+print('best overall\n', df.loc[df[METRIC'].idxmax()])
 no_prot = df.query("module not in ['proteins', 'peptides3', 'peptides4']")
 no_prot['module'].cat.remove_unused_categories(inplace=True)
-print('best off-the-shelf\n', no_prot.loc[no_prot['AUC'].idxmax()])
+print('best off-the-shelf\n', no_prot.loc[no_prot[METRIC'].idxmax()])
 print(module_stats_df.to_latex())
 module_stats_df
 #%% MS1 vs all rank correlation
 # all values
 correlation_df = modalities_paired.query(
     "cohort_identifier != 'proteomics'"
-)['AUC']
+)[METRIC']
 print(
     'all values Spearman rank correlation: ',
     f'{correlation_df.corr(method="spearman").iloc[0, 1]}'
@@ -251,7 +252,7 @@ g = sns.scatterplot(
     markers=['o', 'v'],
     edgecolor='face',
 )
-g.set(xlabel='all_modalities [AUC]', ylabel='ms1_only [AUC]')
+g.set(xlabel=f'all_modalities [{METRIC}]', ylabel=f'ms1_only [{METRIC}]')
 plt.axis('equal')
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
@@ -263,11 +264,12 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.scatterplot(
     ax=ax, x='all_modalities', y='ms1_only',
-    data=module_stats_df['median AUC'][3:],
-    hue=module_stats_df['architecture'][3:], palette=architecture_colors.values[1:],
+    data=module_stats_df[f'median {METRIC}'][3:],
+    hue=module_stats_df['architecture'][3:],
+    palette=architecture_colors.values[1:],
     edgecolor='face',
 )
-g.set(xlabel='all_modalities [AUC]', ylabel='ms1_only [AUC]')
+g.set(xlabel=f'all_modalities [{METRIC}]', ylabel=f'ms1_only [{METRIC}]')
 plt.axis('equal')
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
@@ -279,7 +281,7 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.boxplot(
-    ax=ax, x="module", y="AUC",
+    ax=ax, x="module", y=METRIC,
     hue='architecture', dodge=False, palette=architecture_colors.values,
     data=df_, flierprops={'markersize': 0.5}
 )
@@ -295,7 +297,7 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.boxplot(
-    ax=ax, x="module", y="AUC",
+    ax=ax, x="module", y=METRIC,
     hue='architecture', dodge=False, palette=architecture_colors.values[1:],
     data=df__, flierprops={'markersize': 0.5}
 )
@@ -316,7 +318,7 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.scatterplot(
     ax=ax,
-    x="module", y="AUC", data=df_,
+    x="module", y=METRIC, data=df_,
     hue='classifier', palette='colorblind', style='cohort_identifier',
     markers=['s', 'o', 'v'], edgecolor='face',   # linewidths=0.01  # no change
 )
@@ -335,7 +337,7 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.scatterplot(
     ax=ax,
-    x="module", y="AUC", data=df__,
+    x="module", y=METRIC, data=df__,
     hue='classifier', palette='colorblind', style='cohort_identifier',
     markers=['s', 'o', 'v'], edgecolor='face',   # linewidths=0.01  # no change
 )
@@ -355,7 +357,7 @@ logger.info(f'{figure_name} sizes: {(2*fig_width, fig_height)}')
 
 g = sns.catplot(
     kind="swarm",
-    x="resolution", y="AUC",
+    x="resolution", y=METRIC,
     hue='architecture', palette=architecture_colors.values[1:],
     col="modality",
     data=df.query("cohort_identifier != 'proteomics'").rename(
@@ -397,8 +399,8 @@ modalities_paired_no_prot = modalities_paired.query(
     "cohort_identifier != 'proteomics'"
 )
 statistic, p_value = stats.ttest_rel(
-    modalities_paired_no_prot.loc[:, ('AUC', 'all_modalities')].values,
-    modalities_paired_no_prot.loc[:, ('AUC', 'ms1_only')].values,
+    modalities_paired_no_prot.loc[:, (METRIC, 'all_modalities')].values,
+    modalities_paired_no_prot.loc[:, (METRIC, 'ms1_only')].values,
 )
 
 modalities_delta = (
@@ -410,7 +412,7 @@ print(
     f'p: {p_value}\n'
     f'H0 (all_modalities smaller or equal) rejected under alpha {alpha}: '
     f'{statistic > 0 and p_value/2 < alpha}\n'
-    f'mean_delta (all-ms1) [AUC]: {modalities_delta["AUC"].mean()}'
+    f'mean_delta (all-ms1) [{METRIC}]: {modalities_delta[METRIC].mean()}'
 )
 
 
@@ -422,18 +424,18 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 
-sns.distplot(modalities_delta['AUC'], kde=False, ax=ax)  #  rug=True
+sns.distplot(modalities_delta[METRIC], kde=False, ax=ax)  #  rug=True
 for arch, color in architecture_colors.iteritems():
     # multicolored rug
     sns.rugplot(
-        modalities_delta.query('architecture == @arch')['AUC'],
+        modalities_delta.query('architecture == @arch')[METRIC],
         ax=ax, color=color)
-plt.xlabel(u'Δ AUC')
+plt.xlabel(f'Δ {METRIC}')
 plt.axvline(0, 0, 1)
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
 # Differences in AUC are not normal distributed
-# stats.probplot(modalities_delta['AUC'], plot=plt)
+# stats.probplot(modalities_delta[METRIC], plot=plt)
 
 
 #%% because for mobilenets increase more in performance with all_modalities
@@ -467,8 +469,8 @@ cohort_paired = df.query("cohort_identifier != 'proteomics'").set_index(
     ['classifier', 'module', 'modality', 'architecture']
 ).pivot(columns='cohort_identifier')
 statistic, p_value = stats.ttest_rel(
-    cohort_paired.loc[:, ('AUC', 'ppp1_raw_image_512x512')].values,
-    cohort_paired.loc[:, ('AUC', 'ppp1_raw_image_2048x2048')].values,
+    cohort_paired.loc[:, (METRIC, 'ppp1_raw_image_512x512')].values,
+    cohort_paired.loc[:, (METRIC, 'ppp1_raw_image_2048x2048')].values,
 )
 
 cohort_delta = (cohort_paired.xs(
@@ -481,7 +483,7 @@ print(
     f'p: {p_value}\n'
     f'H0 (512x512 smaller or equal) rejected under alpha {alpha}: '
     f'{statistic > 0 and p_value/2 < alpha}\n'
-    f'mean_delta (512x512-2048x2048) [AUC]: {cohort_delta["AUC"].mean()}'
+    f'mean_delta (512x512-2048x2048) [{METRIC}]: {cohort_delta[METRIC].mean()}'
 )
 
 
@@ -491,18 +493,18 @@ fig_width, fig_height = manuscript_sizes(denominator=3, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-sns.distplot(cohort_delta['AUC'], kde=False, ax=ax)  #  rug=True
+sns.distplot(cohort_delta[METRIC], kde=False, ax=ax)  #  rug=True
 for arch, color in architecture_colors.iteritems():
     # multicolored rug
     sns.rugplot(
-        cohort_delta.query('architecture == @arch')['AUC'],
+        cohort_delta.query('architecture == @arch')[METRIC],
         ax=ax, color=color)
-plt.xlabel(u'Δ AUC')
+plt.xlabel(f'Δ {METRIC}')
 plt.axvline(0, 0, 1)
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
-# u'Δ AUC'
+
 # Differences in AUC are pretty much normal distributed
-# stats.probplot(cohort_delta['AUC'], plot=plt)
+# stats.probplot(cohort_delta[METRIC], plot=plt)
 
 
 #%% [markdown]

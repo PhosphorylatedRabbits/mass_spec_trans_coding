@@ -213,24 +213,25 @@ module_stats_df = pd.concat([
 module_stats_df['architecture'] = module_stats_df.index.map(assign_module)
 
 #%% max performance
-print('best overall\n', df.loc[df[METRIC'].idxmax()])
+print('best overall\n', df.loc[df[METRIC].idxmax()])
 no_prot = df.query("module not in ['proteins', 'peptides3', 'peptides4']")
 no_prot['module'].cat.remove_unused_categories(inplace=True)
-print('best off-the-shelf\n', no_prot.loc[no_prot[METRIC'].idxmax()])
+print('best off-the-shelf\n', no_prot.loc[no_prot[METRIC].idxmax()])
+print('best off-the-shelf ms1_only\n', df__.loc[df__[METRIC].idxmax()])
 print(module_stats_df.to_latex())
 module_stats_df
 #%% MS1 vs all rank correlation
 # all values
 correlation_df = modalities_paired.query(
     "cohort_identifier != 'proteomics'"
-)[METRIC']
+)[METRIC]
 print(
-    'all values Spearman rank correlation: ',
+    "all values Spearman's rank correlation: ",
     f'{correlation_df.corr(method="spearman").iloc[0, 1]}'
 )
 # median
 print(
-    'module median Spearman rank correlation: ',
+    "module median Spearman's rank correlation: ",
     f'{correlation_df.groupby("module").median().corr(method="spearman").iloc[0, 1]}'
 )
 
@@ -273,7 +274,7 @@ g.set(xlabel=f'all_modalities [{METRIC}]', ylabel=f'ms1_only [{METRIC}]')
 plt.axis('equal')
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
-#%% experiment combining figure 2
+#%% combining figure 2
 figure_name = 'module_overlayed.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=1, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
@@ -284,7 +285,7 @@ g = sns.boxplot(
     ax=g, x="module", y=METRIC,
     hue='architecture', dodge=False, palette=architecture_colors.values,
     data=df_,
-    fliersize=0.0  # outliers shows by scatterplot
+    fliersize=0.0  # outliers shown by scatterplot
 )
 # points
 clfs_cols = sns.color_palette("Dark2", 8, 1.0)[3:-1]
@@ -310,7 +311,43 @@ loc, labels = plt.xticks()
 g.set_xticklabels(labels, rotation=90)
 
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
+#%% combining figure 2 but MS1
+figure_name = 'module_overlayed_ms1.pdf'
+fig_width, fig_height = manuscript_sizes(denominator=1, text_width=5.5)
+logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
+fig, g = plt.subplots(figsize=(fig_width, fig_height))
+# box
+g = sns.boxplot(
+    ax=g, x="module", y=METRIC,
+    hue='architecture', dodge=False, palette=architecture_colors.values[1:],
+    data=df__,
+    fliersize=0.0  # outliers shown by scatterplot
+)
+# points
+clfs_cols = sns.color_palette("Dark2", 8, 1.0)[3:-1]
+g = sns.scatterplot(
+    ax=g,
+    x="module", y=METRIC, data=df__,
+    hue='classifier', palette=clfs_cols, style='cohort_identifier',
+    markers=['o', 'v'], linewidth=0.1,  edgecolor="grey",
+    # y_jitter=True  # non-functional in sns
+)
+# legend add 'architecture' subtitle
+handles, lables = g.get_legend_handles_labels()
+empty = matplotlib.patches.Rectangle(
+    (0, 0), 0, 0,
+    fill=False, edgecolor='none', visible=False
+)
+handles.insert(0, empty)
+lables.insert(0, 'architecture')
+g.legend(handles, lables)
+
+# xticks
+loc, labels = plt.xticks()
+g.set_xticklabels(labels, rotation=90)
+
+plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 #%% paper 2a
 #  main result: encoder importance
 figure_name = 'median_module.pdf'

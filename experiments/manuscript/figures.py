@@ -278,27 +278,36 @@ figure_name = 'module_overlayed.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=1, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
-fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+fig, g = plt.subplots(figsize=(fig_width, fig_height))
+# box
 g = sns.boxplot(
-    ax=ax, x="module", y=METRIC,
+    ax=g, x="module", y=METRIC,
     hue='architecture', dodge=False, palette=architecture_colors.values,
     data=df_,
     fliersize=0.0  # outliers shows by scatterplot
 )
-loc, labels = plt.xticks()
-g.set_xticklabels(labels, rotation=90)
-
-# `sns.choose_colorbrewer_palette('qualitative')` in a real notebook
+# points
 clfs_cols = sns.color_palette("Dark2", 8, 1.0)[3:-1]
-
 g = sns.scatterplot(
-    ax=ax,
+    ax=g,
     x="module", y=METRIC, data=df_,
     hue='classifier', palette=clfs_cols, style='cohort_identifier',
     markers=['s', 'o', 'v'], linewidth=0.1,  edgecolor="grey",
     # y_jitter=True  # non-functional in sns
 )
-g.set_xticklabels(module_order, rotation=90)
+# legend add 'architecture' subtitle
+handles, lables = g.get_legend_handles_labels()
+empty = matplotlib.patches.Rectangle(
+    (0, 0), 0, 0,
+    fill=False, edgecolor='none', visible=False
+)
+handles.insert(0, empty)
+lables.insert(0, 'architecture')
+g.legend(handles, lables)
+
+# xticks
+loc, labels = plt.xticks()
+g.set_xticklabels(labels, rotation=90)
 
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 

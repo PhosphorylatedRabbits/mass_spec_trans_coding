@@ -235,6 +235,17 @@ print(
     f'{correlation_df.groupby("module").median().corr(method="spearman").iloc[0, 1]}'
 )
 
+# %% random forrest vs XGBoost
+classifiers_paired = df.set_index(
+    ['modality', 'module', 'cohort_identifier', 'architecture']
+).pivot(columns='classifier')[METRIC]
+
+trees_diff = classifiers_paired['XGBoost'] - classifiers_paired['RandomForest']
+print(trees_diff.mean())
+# sns.distplot(trees_diff, rug=True)
+# cls_rank_correlations = classifiers_paired.corr(method="spearman")
+
+
 #%% [markdown]
 """
 # Figures

@@ -351,7 +351,25 @@ axes[0, 0].set_xlim(-0.5, 1.5)
 axes[0, 1].set_xlim(-0.5, 3.5)
 axes[0, 2].set_xlim(-0.5, 1.5)
 # axes[0,3].set_xlim(0,11)
+# %%
+for group_name, group_df in param_index_df.groupby('module'): # cohort_identifier
+    g = sns.catplot(
+        x="cv_index",
+        col="classifier",
+        # hue="classifier",
+        palette='colorblind',
+        kind="count", sharex=False,
+        data=group_df,
+        facet_kws={'gridspec_kws': {'width_ratios': [2 / 7, 4 / 7, 2 / 7, 1.0]}}
+    )
+    axes = g.axes
+    axes[0, 0].set_xlim(-0.5, 1.5)
+    axes[0, 1].set_xlim(-0.5, 3.5)
+    axes[0, 2].set_xlim(-0.5, 1.5)
 
+    print(group_name)
+    plt.show()
+    plt.close()
 
 #%% [markdown]
 """

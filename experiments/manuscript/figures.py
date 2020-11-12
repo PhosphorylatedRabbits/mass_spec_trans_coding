@@ -196,10 +196,36 @@ matplotlib.rcParams.update(params)
 
 #%% [markdown]
 """
-Numbers
+Numbers & Tables
 """
+# %%
+all_auc_pivot = np.round(
+    df, decimals=3
+).replace(to_replace=r'^ppp1_raw_image_', value='', regex=True)[
+    ['classifier', 'module', 'cohort_identifier', 'AUC', 'modality']
+].set_index(
+    ['module', 'cohort_identifier']
+).pivot(columns=['modality', 'classifier'])
 
-#%% 
+print(all_auc_pivot.to_latex())
+
+# %% same as above but make maximum value per module bold
+all_auc_pivot = np.round(
+    df, decimals=3
+).replace(to_replace=r'^ppp1_raw_image_', value='', regex=True)[
+    ['classifier', 'module', 'cohort_identifier', 'AUC', 'modality']
+].set_index(
+    ['module']
+).pivot(
+    columns=['modality', 'classifier', 'cohort_identifier']
+).mask(
+    cond=lambda df: df.eq(df.max(axis=1), axis=0),
+    other=lambda df: df.applymap(lambda x: f'\textbf{{{x:.3f}}}'),
+    axis=1
+).stack()
+# all_auc_pivot
+print(all_auc_pivot.to_latex(escape=False))
+# %%
 modalities_paired = df.set_index(
     ['classifier', 'module', 'cohort_identifier', 'architecture']
 ).pivot(columns='modality')
@@ -242,7 +268,14 @@ classifiers_paired = df.set_index(
 
 trees_diff = classifiers_paired['XGBoost'] - classifiers_paired['RandomForest']
 print(trees_diff.mean())
-# sns.distplot(trees_diff, rug=True)
+print(trees_diff.std())
+
+ax = sns.distplot(trees_diff,)
+for arch, color in architecture_colors.iteritems():
+    # multicolored rug
+    sns.rugplot(
+        trees_diff[trees_diff.index.get_level_values(3) == arch],
+        ax=ax, color=color)
 # cls_rank_correlations = classifiers_paired.corr(method="spearman")
 
 
@@ -641,7 +674,7 @@ for column in varying_features.columns:
 #%%
 encoder_table = pd.concat([
     encoder_characteristics.astype(int), varying_features,
-] , axis=1)
+], axis=1)
 encoder_table
 #%%
 print(encoder_table.to_latex())

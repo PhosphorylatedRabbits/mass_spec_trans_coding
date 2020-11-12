@@ -1,44 +1,27 @@
-\begin{table}[]
+\toprule
 \begin{tabular}{lrrrr}
-tfhub models {[}ref{]}                                                                                                                 & input     & output & retention    & retention                \\
-                                                                                                                                       &           &        & ms1, 512x512 & all\_modalities, 512x512 \\
-\hline
-\href{https://tfhub.dev/google/imagenet/resnet\_v2\_101/feature\_vector/1}{resnet\_v2\_101} \cite{he2016identity}                      & 224x224x3 & 2048   & 942          & 120577                   \\
-\href{https://tfhub.dev/google/imagenet/resnet\_v2\_50/feature\_vector/1}{resnet\_v2\_50} \cite{he2016identity}                        & 224x224x3 & 2048   & 1145         & 132459                   \\
-\href{https://tfhub.dev/google/imagenet/resnet\_v2\_152/feature\_vector/1}{resnet\_v2\_152} \cite{he2016identity}                      & 224x224x3 & 2048   & 1570         & 164260                   \\
-\href{https://tfhub.dev/google/imagenet/nasnet\_large/feature\_vector/1}{nasnet\_large} \cite{zoph2018learning}                        & 331x331x3 & 4032   & 3671         & 365296                   \\
-\href{https://tfhub.dev/google/imagenet/inception\_resnet\_v2/feature\_vector/1}{inception\_resnet\_v2} \cite{szegedy2017inception}    & 299x299x3 & 1536   & 1536         & 155107                   \\
-\href{https://tfhub.dev/google/imagenet/inception\_v3/feature\_vector/1}{inception\_v3\_imagenet} \cite{szegedy2016rethinking}         & 299x299x3 & 2048   & 2045         & 206835                   \\
-\href{https://tfhub.dev/google/imagenet/inception\_v2/feature\_vector/1}{inception\_v2} \cite{ioffe2015batch}                          & 224x224x3 & 1024   & 1018         & 103418                   \\
-\href{https://tfhub.dev/google/inaturalist/inception\_v3/feature\_vector/1}{inception\_v3\_inaturalist} \cite{cui2018large}            & 299x299x3 & 2048   & 2044         & 206725                   \\
-\href{https://tfhub.dev/google/imagenet/nasnet\_mobile/feature\_vector/1}{nasnet\_mobile} \cite{zoph2018learning}                      & 331x331x3 & 7168   & 5114         & 594543                   \\
-\href{https://tfhub.dev/google/imagenet/amoebanet\_a\_n18\_f448/feature\_vector/1}{amoebanet\_a\_n18\_f448} \cite{real2018regularized} & 224x224x3 & 1056   & 618          & 88492                    \\
-\href{https://tfhub.dev/google/imagenet/inception\_v1/feature\_vector/1}{inception\_v1} \cite{szegedy2015going}                        & 224x224x3 & 1024   & 922          & 102641                   \\
-\href{https://tfhub.dev/google/imagenet/mobilenet\_v1\_050\_224/feature\_vector/1}{mobilenet\_v1\_050\_224} \cite{howard2018inverted}  & 331x331x3 & 4320   & 4050         & 427948                   \\
-\href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_075\_224/feature\_vector/2}{mobilenet\_v2\_075\_224} \cite{howard2018inverted}  & 224x224x3 & 1280   & 1178         & 118715                   \\
-\href{https://tfhub.dev/google/imagenet/pnasnet\_large/feature\_vector/2}{pnasnet\_large} \cite{liu2018progressive}                    & 224x224x3 & 1280   & 1181         & 116858                   \\
-\href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_050\_224/feature\_vector/2}{mobilenet\_v2\_050\_224} \cite{howard2018inverted}  & 224x224x3 & 512    & 491          & 50680                    \\
-\href{https://tfhub.dev/google/imagenet/mobilenet\_v1\_025\_224/feature\_vector/1}{mobilenet\_v1\_025\_224} \cite{howard2018inverted}  & 128x128x3 & 1280   & 988          & 102634                   \\
-\href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_075\_96/feature\_vector/2}{mobilenet\_v2\_075\_96} \cite{howard2018inverted}    & 96x96x3   & 1280   & 787          & 92169                    \\
-\href{https://tfhub.dev/google/imagenet/mobilenet\_v1\_100\_128/feature\_vector/1}{mobilenet\_v1\_100\_128} \cite{howard2018inverted}  & 224x224x3 & 256    & 249          & 25026                    \\
-\href{https://tfhub.dev/google/imagenet/mobilenet\_v1\_050\_128/feature\_vector/1}{mobilenet\_v1\_050\_128} \cite{howard2018inverted}  & 128x128x3 & 512    & 446          & 46829                    \\
-                                                                                                                                       &           &        &              &                          \\
-proteomics analysis                                                                                                                    &           & output &              & NA filtered              \\
-\hline
-proteins                                                                                                                               &           & 2103   &              & 265                      \\
-peptides2                                                                                                                              &           & 16644  &              & 0                        \\
-peptides3                                                                                                                              &           & 16644  &              & 1207                     \\
-peptides4                                                                                                                              &           & 16104  &              & 1207                    
+\textbf{Encoder name} {[}ref{]}                                                                                                         & \textbf{Input} & \textbf{Output} & \multicolumn{2}{l}{\textbf{Number of retained features} in}   \\
+                                                                                                                                        &                &                 & \textit{ms1}, 512x512 & \textit{all\_modalities}, 512x512     \\
+module                                                                                                                                  &                &                 &                       &                                       \\
+\midrule
+\href{https://tfhub.dev/google/imagenet/resnet\_v2\_101/feature\_vector/1}{resnet\_v2\_101} \cite{he2016identity}                       &      224x224x3 &            2048 &            942 (45\%) &   120577 (58\%)                       \\
+\href{https://tfhub.dev/google/imagenet/resnet\_v2\_50/feature\_vector/1}{resnet\_v2\_50} \cite{he2016identity}                         &      224x224x3 &            2048 &           1145 (55\%) &   132459 (64\%)                       \\
+\href{https://tfhub.dev/google/imagenet/resnet\_v2\_152/feature\_vector/1}{resnet\_v2\_152} \cite{he2016identity}                       &      224x224x3 &            2048 &           1570 (76\%) &   164260 (79\%)                       \\
+\href{https://tfhub.dev/google/imagenet/nasnet\_large/feature\_vector/1}{nasnet\_large} \cite{zoph2018learning}                         &      331x331x3 &            4032 &           3671 (91\%) &   365296 (89\%)                       \\
+\href{https://tfhub.dev/google/imagenet/inception\_resnet\_v2/feature\_vector/1}{inception\_resnet\_v2} \cite{szegedy2017inception}     &      299x299x3 &            1536 &          1536 (100\%) &   155107 (99\%)                       \\
+\href{https://tfhub.dev/google/imagenet/inception\_v3/feature\_vector/1}{inception\_v3\_imagenet} \cite{szegedy2016rethinking}          &      299x299x3 &            2048 &           2045 (99\%) &   206835 (99\%)                       \\
+\href{https://tfhub.dev/google/imagenet/inception\_v2/feature\_vector/1}{inception\_v2} \cite{szegedy2016rethinking}                    &      224x224x3 &            1024 &           1018 (99\%) &   103418 (99\%)                       \\
+\href{https://tfhub.dev/google/inaturalist/inception\_v3/feature\_vector/1}{inception\_v3\_inaturalist} \cite{cui2018large}             &      299x299x3 &            2048 &           2044 (99\%) &   206725 (99\%)                       \\
+\href{https://tfhub.dev/google/imagenet/amoebanet\_a\_n18\_f448/feature\_vector/1}{amoebanet\_a\_n18\_f448} \cite{real2018regularized}  &      331x331x3 &            7168 &           5114 (71\%) &   594543 (82\%)                       \\
+\href{https://tfhub.dev/google/imagenet/nasnet\_mobile/feature\_vector/1}{nasnet\_mobile} \cite{zoph2018learning}                       &      224x224x3 &            1056 &            618 (58\%) &    88492 (82\%)                       \\
+\href{https://tfhub.dev/google/imagenet/inception\_v1/feature\_vector/1}{inception\_v1} \cite{szegedy2015going}                         &      224x224x3 &            1024 &            922 (90\%) &   102641 (99\%)                       \\
+\href{https://tfhub.dev/google/imagenet/pnasnet\_large/feature\_vector/2}{pnasnet\_large} \cite{liu2018progressive}                     &      331x331x3 &            4320 &           4050 (93\%) &   427948 (98\%)                       \\
+\href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_050\_224/feature\_vector/2}{mobilenet\_v2\_050\_224} \cite{howard2018inverted}   &      224x224x3 &            1280 &           1178 (92\%) &   118715 (91\%)                       \\
+\href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_075\_224/feature\_vector/2}{mobilenet\_v2\_075\_224} \cite{howard2018inverted}   &      224x224x3 &            1280 &           1181 (92\%) &   116858 (90\%)                       \\
+\href{https://tfhub.dev/google/imagenet/mobilenet\_v1\_050\_224/feature\_vector/1}{mobilenet\_v1\_050\_224} \cite{howard2017mobilenets} &      224x224x3 &             512 &            491 (95\%) &    50680 (98\%)                       \\
+\href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_100\_128/feature\_vector/2}{mobilenet\_v2\_100\_128} \cite{howard2018inverted}   &      128x128x3 &            1280 &            988 (77\%) &   102634 (79\%)                       \\
+\href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_075\_96/feature\_vector/2}{mobilenet\_v2\_075\_96} \cite{howard2018inverted}     &        96x96x3 &            1280 &            787 (61\%) &    92169 (71\%)                       \\
+\href{https://tfhub.dev/google/imagenet/mobilenet\_v1\_025\_224/feature\_vector/1}{mobilenet\_v1\_025\_224} \cite{howard2017mobilenets} &      224x224x3 &             256 &            249 (97\%) &    25026 (96\%)                       \\
+\href{https://tfhub.dev/google/imagenet/mobilenet\_v1\_050\_128/feature\_vector/1}{mobilenet\_v1\_050\_128} \cite{howard2017mobilenets} &      128x128x3 &             512 &            446 (87\%) &    46829 (90\%)                       \\
+\bottomrule
 \end{tabular}
-\end{table}
-% \href{https://tfhub.dev/google/imagenet/mobilenet\_v1\_100\_224/feature\_vector/1}{mobilenet\_v1\_100\_224} \cite{howard2018inverted}  & \\
-% \href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_035\_224/feature\_vector/2}{mobilenet\_v2\_035\_224} \cite{howard2018inverted}  & \\
-% \href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_140\_224/feature\_vector/2}{mobilenet\_v2\_140\_224} \cite{howard2018inverted}  & \\
-% \href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_100\_224/feature\_vector/2}{mobilenet\_v2\_100\_224} \cite{howard2018inverted}  & \\
-% \href{https://tfhub.dev/google/imagenet/mobilenet\_v1\_025\_128/feature\_vector/1}{mobilenet\_v1\_025\_128} \cite{howard2018inverted}  & \\
-% \href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_100\_128/feature\_vector/2}{mobilenet\_v2\_100\_128} \cite{howard2018inverted}  & \\
-% \href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_100\_96/feature\_vector/2}{mobilenet\_v2\_100\_96} \cite{howard2018inverted}    & \\
-% \href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_050\_128/feature\_vector/2}{mobilenet\_v2\_050\_128} \cite{howard2018inverted}  & \\
-% \href{https://tfhub.dev/google/imagenet/mobilenet\_v2\_035\_128/feature\_vector/2}{mobilenet\_v2\_035\_128} \cite{howard2018inverted}  & \\
-
-

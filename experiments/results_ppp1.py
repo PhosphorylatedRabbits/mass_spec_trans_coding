@@ -107,6 +107,35 @@ df_ = df_.query(
 df__ = df_.query("modality == 'all_modalities'")
 
 
+# %% explore linear models for ANOVA
+# from patsy import ModelDesc
+
+# desc = ModelDesc.from_formula("y ~ (a + b + c + d) ** 2"))
+# print(desc)
+# desc.describe()
+# %% ANOVA
+
+import statsmodels.api as sm
+
+from statsmodels.formula.api import ols
+
+
+# ['modality', 'module', 'cohort_identifier', 'classifier']
+# + C(cohort_identifier, Sum) only can do 3 way anova like this, so ignore resolution
+linear_model = ols(
+    'validation_scores_AUC ~ '
+    'C(module, Sum) * C(classifier, Sum) * C(modality, Sum)',
+    data=df_,
+    subset=df_.cohort_identifier != 'proteomics'
+).fit()
+
+with pd.option_context("display.max_rows", None):
+    display(linear_model.params.sort_values(ascending=False))
+
+table = sm.stats.anova_lm(linear_model, typ=3) # Type 2 ANOVA DataFrame
+table
+
+
 #%% message: cropped is the same as ms1_only
 data = df
 g = sns.catplot(x="classifier", y="validation_scores_AUC",

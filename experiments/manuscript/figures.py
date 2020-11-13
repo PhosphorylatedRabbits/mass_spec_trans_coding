@@ -270,12 +270,30 @@ trees_diff = classifiers_paired['XGBoost'] - classifiers_paired['RandomForest']
 print(trees_diff.mean())
 print(trees_diff.std())
 
-ax = sns.distplot(trees_diff,)
+trees_diff_group = trees_diff.groupby('modality')
+trees_diff_group.mean()
+trees_diff_group.std()
+
+g = sns.FacetGrid(trees_diff.reset_index(level=0), hue='modality', size=5).map(sns.distplot, 0)
+g.add_legend()
+ax = g.ax
+# ax = sns.distplot(trees_diff, )
 for arch, color in architecture_colors.iteritems():
     # multicolored rug
     sns.rugplot(
         trees_diff[trees_diff.index.get_level_values(3) == arch],
         ax=ax, color=color)
+# for modality, color in zip(
+#     ["ms1_only", "all_modalities"],
+#     [
+#         (0.12156862745098039, 0.4666666666666667, 0.7058823529411765),
+#         (1.0, 0.4980392156862745, 0.054901960784313725)
+#     ]
+# ):
+#     print(modality, color)    # multicolored rug
+#     sns.rugplot(
+#         trees_diff[trees_diff.index.get_level_values(0) == modality],
+#         ax=ax, color=color)
 # cls_rank_correlations = classifiers_paired.corr(method="spearman")
 
 

@@ -51,7 +51,7 @@ df_raw = pd.read_csv(DF_PATH, index_col=0)
 
 #%% [markdown]
 """
-# filter and sort DataFrame
+# filter and sort and rename DataFrame
 """
 #%%
 #remove most mobilenets
@@ -109,34 +109,56 @@ df = df.query(
     "(raw_image_size_width != '243.0') & (raw_image_size_width != '973.0')"
 )
 
+# renaming
+rn_cohort = ('cohort_identifier', 'resolution')
+rn_modality = ('modality', 'available input')
+rn_module = ('module', 'encoder')
+rename_columns = dict([rn_cohort, rn_modality, rn_module])
+# categorical values
+rp_resolution = ('ppp1_raw_image_', '')
+rn_lr = ('LogisticRegression', 'LR')
+rn_rf = ('RandomForest', 'RF')
+# rn_ms1 = ('ms1_only', 'ms1 only')
+rn_ms2 = ('all_modalities', 'ms1_and_ms2')
+
+df = df.rename(columns=rename_columns)
+df['classifier'] = df['classifier'].str.replace(*rn_lr).replace(*rn_rf)
+df['resolution'] = df['resolution'].str.replace(*rp_resolution)
+df['available input'] = df['available input'].str.replace(*rn_ms2)
+
 
 # architecture groups
-def assign_module(module_name):
-    module_group = module_name.split('_')[0]
-    if 'nasnet' in module_group or module_group == 'amoebanet':
-        module_group = 'archirecture search'
-    if module_group in ['proteins', 'peptides3', 'peptides4']:
-        module_group = 'proteomic'
-    return module_group
+def assign_encoder(encoder_name):
+    encoder_group = encoder_name.split('_')[0].capitalize().replace('net', 'Net')
+    if encoder_group == 'AmoebaNet' or 'nasnet' in encoder_group.lower():
+        encoder_group = 'NASNet'
+    if encoder_group in ['Proteins', 'Peptides3', 'Peptides4']:
+        encoder_group = 'Proteomics'
+    return encoder_group
 
 
-df['architecture'] = df['module'].apply(assign_module)
+df['architecture'] = df['encoder'].apply(assign_encoder)
 
 
-#%% order is modules sorted for median AUC for all_modalities
-module_group = df.query("modality == 'all_modalities'").groupby('module')[METRIC]
-module_medians = module_group.median().sort_values(ascending=False)
-module_order = module_medians.index
+#%% order is encoders sorted for median AUC for ms1_and_ms2
+encoder_group = df.query("`available input` == 'ms1_and_ms2'").groupby('encoder')[METRIC]
+encoder_medians = encoder_group.median().sort_values(ascending=False)
+encoder_order = encoder_medians.index
+latex_encoder_order = [encoder.replace('_', '\_') for encoder in encoder_order]
 
 
-df['module'] = df['module'].astype('category').cat.set_categories(module_order)
-df = df.sort_values(['module', METRIC], ascending=[True, False])
+df['encoder'] = df['encoder'].astype('category').cat.set_categories(encoder_order)
+df = df.sort_values(['encoder', METRIC], ascending=[True, False])
 
-# only all_modalities
-df_ = df.query("modality == 'all_modalities'")
-df__ = df.query("modality == 'ms1_only'")
+# only ms1_and_ms2
+input_group = df.groupby('available input')
+for name, group in input_group:
+    if name == 'ms1_and_ms2':
+        df_ = group
+    if name == 'ms1_only':
+        df__ = group
 # no ['proteins', 'peptides3', 'peptides4'] for ms1_only
-df__['module'].cat.remove_unused_categories(inplace=True)
+df__['encoder'].cat.remove_unused_categories(inplace=True)
 
 
 #%% [markdown]
@@ -148,9 +170,9 @@ archs = df['architecture'].unique()
 architecture_colors = pd.Series(
     sns.color_palette(n_colors=len(archs)), index=archs
 )
-module_colors = pd.Series(
-    module_order, index=module_order
-).map(lambda x: architecture_colors[assign_module(x)])
+encoder_colors = pd.Series(
+    encoder_order, index=encoder_order
+).map(lambda x: architecture_colors[assign_encoder(x)])
 
 #%%
 [(key, value) for key, value in plt.rcParamsDefault.items() if 'size' in key]
@@ -194,62 +216,64 @@ params = {
 
 matplotlib.rcParams.update(params)
 
-#%% [markdown]
+# %% [markdown]
 """
 Numbers & Tables
 """
-# %%
+
+# %% same as above but make maximum value per encoder bold
 all_auc_pivot = np.round(
     df, decimals=3
-).replace(to_replace=r'^ppp1_raw_image_', value='', regex=True)[
-    ['classifier', 'module', 'cohort_identifier', 'AUC', 'modality']
-].set_index(
-    ['module', 'cohort_identifier']
-).pivot(columns=['modality', 'classifier'])
+).replace(to_replace='ms1_only', value='ms1\_only'
+).replace(to_replace='ms1_and_ms2', value='ms1\_and\_ms2')
 
-print(all_auc_pivot.to_latex())
+# this messes up the categorical order
+all_auc_pivot['encoder'] = all_auc_pivot['encoder'].str.replace(
+    '_', '\_'
+).astype('category').cat.set_categories(latex_encoder_order)
 
-# %% same as above but make maximum value per module bold
-all_auc_pivot = np.round(
-    df, decimals=3
-).replace(to_replace=r'^ppp1_raw_image_', value='', regex=True)[
-    ['classifier', 'module', 'cohort_identifier', 'AUC', 'modality']
+all_auc_pivot = all_auc_pivot.sort_values(
+    ['encoder', METRIC], ascending=[True, False]
+)[
+    ['classifier', 'encoder', 'resolution', 'AUC', 'available input']
 ].set_index(
-    ['module']
+    ['encoder']
 ).pivot(
-    columns=['modality', 'classifier', 'cohort_identifier']
+    columns=['available input', 'classifier', 'resolution']
 ).mask(
     cond=lambda df: df.eq(df.max(axis=1), axis=0),
     other=lambda df: df.applymap(lambda x: f'\textbf{{{x:.3f}}}'),
     axis=1
 ).stack()
+
 # all_auc_pivot
 print(all_auc_pivot.to_latex(escape=False))
 # %%
 modalities_paired = df.set_index(
-    ['classifier', 'module', 'cohort_identifier', 'architecture']
-).pivot(columns='modality')
+    ['classifier', 'encoder', 'resolution', 'architecture']
+).pivot(columns='available input')
 
-paired_module_groups = modalities_paired.groupby('module')
-module_stats_df = pd.concat([
-    paired_module_groups.median().loc[:, [METRIC]].rename(columns={METRIC: f'median {METRIC}'}),
-    paired_module_groups.mean().loc[:, [METRIC]].rename(columns={METRIC: f'mean {METRIC}'}),
-    paired_module_groups.std().loc[:, [METRIC]].rename(columns={METRIC: f'standard deviation {METRIC}'}),
+paired_encoder_groups = modalities_paired.groupby('encoder')
+encoder_stats_df = pd.concat([
+    paired_encoder_groups.median().loc[:, [METRIC]].rename(columns={METRIC: f'median {METRIC}'}),
+    paired_encoder_groups.mean().loc[:, [METRIC]].rename(columns={METRIC: f'mean {METRIC}'}),
+    paired_encoder_groups.std().loc[:, [METRIC]].rename(columns={METRIC: f'standard deviation {METRIC}'}),
 ], axis=1)
-module_stats_df['architecture'] = module_stats_df.index.map(assign_module)
+encoder_stats_df['architecture'] = encoder_stats_df.index.map(assign_encoder)
 
 #%% max performance
 print('best overall\n', df.loc[df[METRIC].idxmax()])
-no_prot = df.query("module not in ['proteins', 'peptides3', 'peptides4']")
-no_prot['module'].cat.remove_unused_categories(inplace=True)
+no_prot = df.query("encoder not in ['proteins', 'peptides3', 'peptides4']")
+no_prot['encoder'].cat.remove_unused_categories(inplace=True)
 print('best off-the-shelf\n', no_prot.loc[no_prot[METRIC].idxmax()])
 print('best off-the-shelf ms1_only\n', df__.loc[df__[METRIC].idxmax()])
-print(module_stats_df.to_latex())
-module_stats_df
+print(np.round(encoder_stats_df, decimals=3).to_latex())
+encoder_stats_df
+# %%
 #%% MS1 vs all rank correlation
 # all values
 correlation_df = modalities_paired.query(
-    "cohort_identifier != 'proteomics'"
+    "resolution != 'proteomics'"
 )[METRIC]
 print(
     "all values Spearman's rank correlation: ",
@@ -257,50 +281,18 @@ print(
 )
 # median
 print(
-    "module median Spearman's rank correlation: ",
-    f'{correlation_df.groupby("module").median().corr(method="spearman").iloc[0, 1]}'
+    "encoder median Spearman's rank correlation: ",
+    f'{correlation_df.groupby("encoder").median().corr(method="spearman").iloc[0, 1]}'
 )
 
-# %% random forrest vs XGBoost
-classifiers_paired = df.set_index(
-    ['modality', 'module', 'cohort_identifier', 'architecture']
-).pivot(columns='classifier')[METRIC]
-
-trees_diff = classifiers_paired['XGBoost'] - classifiers_paired['RandomForest']
-print(trees_diff.mean())
-print(trees_diff.std())
-
-trees_diff_group = trees_diff.groupby('modality')
-trees_diff_group.mean()
-trees_diff_group.std()
-
-g = sns.FacetGrid(trees_diff.reset_index(level=0), hue='modality', size=5).map(sns.distplot, 0)
-g.add_legend()
-ax = g.ax
-# ax = sns.distplot(trees_diff, )
-for arch, color in architecture_colors.iteritems():
-    # multicolored rug
-    sns.rugplot(
-        trees_diff[trees_diff.index.get_level_values(3) == arch],
-        ax=ax, color=color)
-# for modality, color in zip(
-#     ["ms1_only", "all_modalities"],
-#     [
-#         (0.12156862745098039, 0.4666666666666667, 0.7058823529411765),
-#         (1.0, 0.4980392156862745, 0.054901960784313725)
-#     ]
-# ):
-#     print(modality, color)    # multicolored rug
-#     sns.rugplot(
-#         trees_diff[trees_diff.index.get_level_values(0) == modality],
-#         ax=ax, color=color)
-# cls_rank_correlations = classifiers_paired.corr(method="spearman")
+# %% random forrest is worse than XGBoost in case of ms1_and_ms2
 
 
 #%% [markdown]
 """
 # Figures
 """
+
 #%% ms1 vs all auc correlation all_values
 figure_name = 'correlation.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=2, text_width=5.5)
@@ -308,15 +300,16 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.scatterplot(
-    ax=ax, x='all_modalities', y='ms1_only',
+    ax=ax, x='ms1_and_ms2', y='ms1_only',
     data=correlation_df.reset_index(),
     hue='architecture', palette=architecture_colors.values[1:],
-    style='cohort_identifier',
+    style='resolution',
     markers=['o', 'v'],
     edgecolor='face',
 )
-g.set(xlabel=f'all_modalities [{METRIC}]', ylabel=f'ms1_only [{METRIC}]')
-plt.axis('equal')
+g.set(xlabel=f'ms1_and_ms2 [{METRIC}]', ylabel=f'ms1_only [{METRIC}]')
+ax.set_aspect('equal')
+g.set_ylim([0.45, 0.86])
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
 #%%
@@ -326,25 +319,26 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.scatterplot(
-    ax=ax, x='all_modalities', y='ms1_only',
-    data=module_stats_df[f'median {METRIC}'][3:],
-    hue=module_stats_df['architecture'][3:],
+    ax=ax, x='ms1_and_ms2', y='ms1_only',
+    data=encoder_stats_df[f'median {METRIC}'][3:],
+    hue=encoder_stats_df['architecture'][3:],
     palette=architecture_colors.values[1:],
     edgecolor='face',
 )
-g.set(xlabel=f'all_modalities [{METRIC}]', ylabel=f'ms1_only [{METRIC}]')
-plt.axis('equal')
+g.set(xlabel=f'ms1_and_ms2 [{METRIC}]', ylabel=f'ms1_only [{METRIC}]')
+ax.set_aspect('equal')
+g.set_ylim([0.45, 0.86])
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
 #%% combining figure 2
-figure_name = 'module_overlayed.pdf'
+figure_name = 'encoder_overlayed.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=1, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, g = plt.subplots(figsize=(fig_width, fig_height))
 # box
 g = sns.boxplot(
-    ax=g, x="module", y=METRIC,
+    ax=g, x="encoder", y=METRIC,
     hue='architecture', dodge=False, palette=architecture_colors.values,
     data=df_,
     fliersize=0.0  # outliers shown by scatterplot
@@ -353,8 +347,8 @@ g = sns.boxplot(
 clfs_cols = sns.color_palette("Dark2", 8, 1.0)[3:-1]
 g = sns.scatterplot(
     ax=g,
-    x="module", y=METRIC, data=df_,
-    hue='classifier', palette=clfs_cols, style='cohort_identifier',
+    x="encoder", y=METRIC, data=df_,
+    hue='classifier', palette=clfs_cols, style='resolution',
     markers=['s', 'o', 'v'], linewidth=0.1,  edgecolor="grey",
     # y_jitter=True  # non-functional in sns
 )
@@ -371,17 +365,18 @@ g.legend(handles, lables)
 # xticks
 loc, labels = plt.xticks()
 g.set_xticklabels(labels, rotation=90)
+g.set_ylim([0.5, 1.0])
 
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 #%% combining figure 2 but MS1
-figure_name = 'module_overlayed_ms1.pdf'
+figure_name = 'encoder_overlayed_ms1.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=1, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, g = plt.subplots(figsize=(fig_width, fig_height))
 # box
 g = sns.boxplot(
-    ax=g, x="module", y=METRIC,
+    ax=g, x="encoder", y=METRIC,
     hue='architecture', dodge=False, palette=architecture_colors.values[1:],
     data=df__,
     fliersize=0.0  # outliers shown by scatterplot
@@ -390,8 +385,8 @@ g = sns.boxplot(
 clfs_cols = sns.color_palette("Dark2", 8, 1.0)[3:-1]
 g = sns.scatterplot(
     ax=g,
-    x="module", y=METRIC, data=df__,
-    hue='classifier', palette=clfs_cols, style='cohort_identifier',
+    x="encoder", y=METRIC, data=df__,
+    hue='classifier', palette=clfs_cols, style='resolution',
     markers=['o', 'v'], linewidth=0.1,  edgecolor="grey",
     # y_jitter=True  # non-functional in sns
 )
@@ -408,46 +403,51 @@ g.legend(handles, lables)
 # xticks
 loc, labels = plt.xticks()
 g.set_xticklabels(labels, rotation=90)
+g.set_ylim(top=1.0)
+plt.axhline(0.5, 0, 1)
 
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
-#%% paper 2a
+#%% just boxes ms1_and_ms2
 #  main result: encoder importance
-figure_name = 'median_module.pdf'
+figure_name = 'median_encoder.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=2, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.boxplot(
-    ax=ax, x="module", y=METRIC,
+    ax=ax, x="encoder", y=METRIC,
     hue='architecture', dodge=False, palette=architecture_colors.values,
     data=df_, flierprops={'markersize': 0.5}
 )
 loc, labels = plt.xticks()
 g.set_xticklabels(labels, rotation=90)
+g.set_ylim([0.5, 1.0])
 
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
-#%% like above, but MS1 only (same order as MS2)
-figure_name = 'median_module_ms1_only.pdf'
+#%% just boxes ms1_only
+figure_name = 'median_encoder_ms1_only.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=2, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.boxplot(
-    ax=ax, x="module", y=METRIC,
+    ax=ax, x="encoder", y=METRIC,
     hue='architecture', dodge=False, palette=architecture_colors.values[1:],
     data=df__, flierprops={'markersize': 0.5}
 )
 loc, labels = plt.xticks()
 g.set_xticklabels(labels, rotation=90)
+g.set_ylim(top=1.0)
+plt.axhline(0.5, 0, 1)
 
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
 
-#%% paper 2b
+#%% no boxes ms1_and_ms2
 # RandomForrest is consitently worse, XGBoost too but ok with proteomics
 # 512x512 better than 2048x2048
-figure_name = 'classifiers_module.pdf'
+figure_name = 'classifiers_encoder.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=2, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
@@ -455,18 +455,19 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.scatterplot(
     ax=ax,
-    x="module", y=METRIC, data=df_,
-    hue='classifier', palette='colorblind', style='cohort_identifier',
+    x="encoder", y=METRIC, data=df_,
+    hue='classifier', palette='colorblind', style='resolution',
     markers=['s', 'o', 'v'], edgecolor='face',   # linewidths=0.01  # no change
 )
-g.set_xticklabels(module_order, rotation=90)
+g.set_xticklabels(encoder_order, rotation=90)
+g.set_ylim([0.5, 1.0])
 
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
-#%% like above but MS1 only (same order as MS2)
+#%% no boxes ms1_only
 # RandomForrest is consitently worse, XGBoost too but ok with proteomics
 # 512x512 better than 2048x2048
-figure_name = 'classifiers_module_ms1_only.pdf'
+figure_name = 'classifiers_encoder_ms1_only.pdf'
 fig_width, fig_height = manuscript_sizes(denominator=2, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
@@ -474,12 +475,14 @@ logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 g = sns.scatterplot(
     ax=ax,
-    x="module", y=METRIC, data=df__,
-    hue='classifier', palette='colorblind', style='cohort_identifier',
+    x="encoder", y=METRIC, data=df__,
+    hue='classifier', palette='colorblind', style='resolution',
     markers=['s', 'o', 'v'], edgecolor='face',   # linewidths=0.01  # no change
 )
 
 g.set_xticklabels(g.get_xticklabels(), rotation=90)  # [a._text for a in g.get_xticklabels()]
+g.set_ylim(top=1.0)
+plt.axhline(0.5, 0, 1)
 
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
@@ -496,10 +499,8 @@ g = sns.catplot(
     kind="swarm",
     x="resolution", y=METRIC,
     hue='architecture', palette=architecture_colors.values[1:],
-    col="modality",
-    data=df.query("cohort_identifier != 'proteomics'").rename(
-        columns={'cohort_identifier': 'resolution'}
-    ),
+    col="available input",
+    data=df.query("resolution != 'proteomics'"),
     s=3,
     height=2*fig_height, aspect=(1.618/3),  # width=fig_width
     # legend=False,
@@ -509,11 +510,6 @@ g = sns.catplot(
 for axes in g.axes.flat:
     # save space in axes title
     axes.set_title(axes.get_title().split(' ')[-1])
-    # save space in x labels
-    axes.set_xticklabels([
-        item.get_text().replace('ppp1_raw_image_', '')
-        for item in axes.get_xticklabels()
-    ])
 
 # plt.gcf().set_size_inches(2*fig_width, fig_height)
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
@@ -527,27 +523,25 @@ alpha = 0.001
 
 #%% [markdown]
 """
-## ms1 vs all_modalities
+## ms1 vs ms1_and_ms2
 """
-
-
-#%% pairwise t-test all_modalities vs ms1
+#%% pairwise t-test ms1_and_ms2 vs ms1
 modalities_paired_no_prot = modalities_paired.query(
-    "cohort_identifier != 'proteomics'"
+    "resolution != 'proteomics'"
 )
 statistic, p_value = stats.ttest_rel(
-    modalities_paired_no_prot.loc[:, (METRIC, 'all_modalities')].values,
+    modalities_paired_no_prot.loc[:, (METRIC, 'ms1_and_ms2')].values,
     modalities_paired_no_prot.loc[:, (METRIC, 'ms1_only')].values,
 )
 
 modalities_delta = (
-    modalities_paired_no_prot.xs('all_modalities', level='modality', axis=1) -
-    modalities_paired_no_prot.xs('ms1_only', level='modality', axis=1)
+    modalities_paired_no_prot.xs('ms1_and_ms2', level='available input', axis=1) -
+    modalities_paired_no_prot.xs('ms1_only', level='available input', axis=1)
 ).reset_index()
 print(
     f't: {statistic}\n'
     f'p: {p_value}\n'
-    f'H0 (all_modalities smaller or equal) rejected under alpha {alpha}: '
+    f'H0 (ms1_and_ms2 smaller or equal) rejected under alpha {alpha}: '
     f'{statistic > 0 and p_value/2 < alpha}\n'
     f'mean_delta (all-ms1) [{METRIC}]: {modalities_delta[METRIC].mean()}'
 )
@@ -567,7 +561,7 @@ for arch, color in architecture_colors.iteritems():
     sns.rugplot(
         modalities_delta.query('architecture == @arch')[METRIC],
         ax=ax, color=color)
-plt.xlabel(f'Δ {METRIC}')
+plt.xlabel(f'Δ {METRIC} (ms1_and_ms2 - ms1_only)')
 plt.axvline(0, 0, 1)
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
@@ -575,25 +569,57 @@ plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 # stats.probplot(modalities_delta[METRIC], plot=plt)
 
 
-#%% because for mobilenets increase more in performance with all_modalities
-# compared to ms1 than the other (generally better) modules.
+#%% because for mobilenets increase more in performance with ms1_and_ms2
+# compared to ms1 than the other (generally better) encoders.
 
-# figure_name = 'modalities_delta_module.pdf'
+# figure_name = 'modalities_delta_encoder.pdf'
 # fig_width, fig_height = manuscript_sizes(denominator=3, text_width=5.5)
 # logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 # fig, ax = plt.subplots(figsize=(fig_width, fig_height))
 # # sns.scatterplot has no order arg for x axis, make sure order is correct
-# data = modalities_delta.sort_values(['module'])
+# data = modalities_delta.sort_values(['encoder'])
 # g = sns.scatterplot(
-#     x="module", y="AUC", data=data,
-#     hue='classifier', palette='colorblind', style='cohort_identifier',
+#     x="encoder", y="AUC", data=data,
+#     hue='classifier', palette='colorblind', style='resolution',
 #     markers=['o', 'v'], edgecolor='face', linewidths=0.1,
 #     ax=ax
 # )
-# g.set_xticklabels(module_order[3:], rotation=90)
+# g.set_xticklabels(encoder_order[3:], rotation=90)
 # plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
+
+# %% random forest does not improve with ms1_and_ms2, like XGBoost
+classifiers_paired = df.set_index(
+    ['available input', 'encoder', 'resolution', 'architecture']
+).pivot(columns='classifier')[METRIC]
+
+trees_diff = classifiers_paired['XGBoost'] - classifiers_paired['RF']
+# print(trees_diff.mean())
+# print(trees_diff.std())
+
+trees_diff_group = trees_diff.groupby('available input')
+print(trees_diff_group.mean())
+print(trees_diff_group.std())
+
+figure_name = 'rf_breakdown.pdf'
+fig_width, fig_height = manuscript_sizes(denominator=3, text_width=5.5)
+logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
+
+g = sns.FacetGrid(trees_diff.reset_index(level=0), hue='available input').map(sns.distplot, 0).add_legend()
+g.fig.set_size_inches(fig_width, fig_height)
+g._legend._set_loc(9)
+ax = g.ax
+# ax.set_title('RF does not improve with ms2 like XGBoost')
+g.set(xlabel=f'Δ {METRIC} (XGBoost - RF)')
+# ax = sns.distplot(trees_diff, )
+for arch, color in architecture_colors.iteritems():
+    # multicolored rug
+    sns.rugplot(
+        trees_diff[trees_diff.index.get_level_values(3) == arch],
+        ax=ax, color=color)
+# plt.axvline(0, 0, 1)
+plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
 #%% [markdown]
 """
@@ -602,18 +628,18 @@ plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
 
 #%% paired t-test
-cohort_paired = df.query("cohort_identifier != 'proteomics'").set_index(
-    ['classifier', 'module', 'modality', 'architecture']
-).pivot(columns='cohort_identifier')
+cohort_paired = df.query("resolution != 'proteomics'").set_index(
+    ['classifier', 'encoder', 'available input', 'architecture']
+).pivot(columns='resolution')
 statistic, p_value = stats.ttest_rel(
-    cohort_paired.loc[:, (METRIC, 'ppp1_raw_image_512x512')].values,
-    cohort_paired.loc[:, (METRIC, 'ppp1_raw_image_2048x2048')].values,
+    cohort_paired.loc[:, (METRIC, '512x512')].values,
+    cohort_paired.loc[:, (METRIC, '2048x2048')].values,
 )
 
 cohort_delta = (cohort_paired.xs(
-    'ppp1_raw_image_512x512', level='cohort_identifier', axis=1
+    '512x512', level='resolution', axis=1
 ) - cohort_paired.xs(
-    'ppp1_raw_image_2048x2048', level='cohort_identifier', axis=1
+    '2048x2048', level='resolution', axis=1
 )).reset_index()
 print(
     f't: {statistic}\n'
@@ -630,13 +656,13 @@ fig_width, fig_height = manuscript_sizes(denominator=3, text_width=5.5)
 logger.info(f'{figure_name} sizes: {(fig_width, fig_height)}')
 
 fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-sns.distplot(cohort_delta[METRIC], kde=False, ax=ax)  #  rug=True
+sns.distplot(cohort_delta[METRIC], kde=False, ax=ax)
 for arch, color in architecture_colors.iteritems():
     # multicolored rug
     sns.rugplot(
         cohort_delta.query('architecture == @arch')[METRIC],
         ax=ax, color=color)
-plt.xlabel(f'Δ {METRIC}')
+plt.xlabel(f'Δ {METRIC} (512x512 - 2048x2048)')
 plt.axvline(0, 0, 1)
 plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 
@@ -650,12 +676,14 @@ plt.savefig(figure_path.format(figure_name), bbox_inches='tight')
 """
 #%% Table
 table = pd.pivot_table(
-    df.query("cohort_identifier != 'proteomics'"),
-    index=['classifier', 'modality', 'cohort_identifier'],
-    columns='module',
-    values=['encoded_features_size',
-            'encoded_image_size_height',
-            'non_varying_features']
+    df.query("resolution != 'proteomics'"),
+    index=['classifier', 'available input', 'resolution'],
+    columns='encoder',
+    values=[
+        'encoded_features_size',
+        'encoded_image_size_height',
+        'non_varying_features'
+    ]
 )
 
 #%% same for all rows
@@ -664,7 +692,7 @@ encoder_characteristics = table.iloc[0].unstack(level=0)[[
 ]]
 
 #%% same for each classifier, pick number from one
-varying_features = table.loc['LogisticRegression', 'non_varying_features'].T
+varying_features = table.loc['LR', 'non_varying_features'].T
 
 
 #%% percentages
@@ -673,11 +701,11 @@ percent_ms1 = varying_features['ms1_only'].divide(
 ) * 100
 percent_ms1.columns = pd.MultiIndex.from_product([['ms1_only'], percent_ms1.columns])
 
-percent_all = varying_features['all_modalities'].divide(
+percent_all = varying_features['ms1_and_ms2'].divide(
     # with ms2 101 times the total possible features
     encoder_characteristics['encoded_features_size'] * 101, axis=0
 ) * 100
-percent_all.columns = pd.MultiIndex.from_product([['all_modalities'], percent_all.columns])
+percent_all.columns = pd.MultiIndex.from_product([['ms1_and_ms2'], percent_all.columns])
 
 percent_df = pd.concat([percent_ms1, percent_all], axis=1).astype(int)
 
@@ -696,6 +724,7 @@ encoder_table = pd.concat([
 encoder_table
 #%%
 print(encoder_table.to_latex())
+print('Adaptation for the manuscript: adding links, not showing 2048x2048')
 
 
 #%%

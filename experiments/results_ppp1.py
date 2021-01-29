@@ -1,6 +1,10 @@
 """Explore results with various plots."""
 
 #%%
+if 'get_ipython' in dir():
+    # in case interactive session was moved to __file__ dir
+    %cd ..
+#%%
 import os
 import glob
 import pandas as pd
@@ -17,6 +21,7 @@ def json_load(filepath):
 
 seed_dir = 'seed_7899463'
 
+# or where downloaded from Box
 DATA_DIR = os.path.join('data/classification_results',
                         seed_dir)
 
@@ -100,6 +105,35 @@ df_ = df_.query(
 )
 # only all_modalitues
 df__ = df_.query("modality == 'all_modalities'")
+
+
+# %% explore linear models for ANOVA
+# from patsy import ModelDesc
+
+# desc = ModelDesc.from_formula("y ~ (a + b + c + d) ** 2"))
+# print(desc)
+# desc.describe()
+# %% ANOVA
+
+import statsmodels.api as sm
+
+from statsmodels.formula.api import ols
+
+
+# ['modality', 'module', 'cohort_identifier', 'classifier']
+# + C(cohort_identifier, Sum) only can do 3 way anova like this, so ignore resolution
+linear_model = ols(
+    'validation_scores_AUC ~ '
+    'C(module, Sum) * C(classifier, Sum) * C(modality, Sum)',
+    data=df_,
+    subset=df_.cohort_identifier != 'proteomics'
+).fit()
+
+with pd.option_context("display.max_rows", None):
+    display(linear_model.params.sort_values(ascending=False))
+
+table = sm.stats.anova_lm(linear_model, typ=3) # Type 2 ANOVA DataFrame
+table
 
 
 #%% message: cropped is the same as ms1_only
@@ -346,7 +380,25 @@ axes[0, 0].set_xlim(-0.5, 1.5)
 axes[0, 1].set_xlim(-0.5, 3.5)
 axes[0, 2].set_xlim(-0.5, 1.5)
 # axes[0,3].set_xlim(0,11)
+# %%
+for group_name, group_df in param_index_df.groupby('module'): # cohort_identifier
+    g = sns.catplot(
+        x="cv_index",
+        col="classifier",
+        # hue="classifier",
+        palette='colorblind',
+        kind="count", sharex=False,
+        data=group_df,
+        facet_kws={'gridspec_kws': {'width_ratios': [2 / 7, 4 / 7, 2 / 7, 1.0]}}
+    )
+    axes = g.axes
+    axes[0, 0].set_xlim(-0.5, 1.5)
+    axes[0, 1].set_xlim(-0.5, 3.5)
+    axes[0, 2].set_xlim(-0.5, 1.5)
 
+    print(group_name)
+    plt.show()
+    plt.close()
 
 #%% [markdown]
 """

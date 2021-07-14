@@ -136,5 +136,21 @@ Whereas
 cannot be made available publicly.
 
 ### References
-
-TBD
+This work is published in [Bioinformatics](https://doi.org/10.1093/bioinformatics/btab311) through ISMB/ECCB 21 proceedings. For a typeable url, use [ibm.biz/mstc-paper](https://ibm.biz/mstc-paper).
+```bibtex
+@article{10.1093/bioinformatics/btab311,
+    author = {Cadow, Joris and Manica, Matteo and Mathis, Roland and Guo, Tiannan and Aebersold, Ruedi and Rodríguez Martínez, María},
+    title = "{On the feasibility of deep learning applications using raw mass spectrometry data}",
+    journal = {Bioinformatics},
+    volume = {37},
+    number = {Supplement_1},
+    pages = {i245-i253},
+    year = {2021},
+    month = {07},
+    abstract = "{In recent years, SWATH-MS has become the proteomic method of choice for data-independent–acquisition, as it enables high proteome coverage, accuracy and reproducibility. However, data analysis is convoluted and requires prior information and expert curation. Furthermore, as quantification is limited to a small set of peptides, potentially important biological information may be discarded. Here we demonstrate that deep learning can be used to learn discriminative features directly from raw MS data, eliminating hence the need of elaborate data processing pipelines. Using transfer learning to overcome sample sparsity, we exploit a collection of publicly available deep learning models already trained for the task of natural image classification. These models are used to produce feature vectors from each mass spectrometry (MS) raw image, which are later used as input for a classifier trained to distinguish tumor from normal prostate biopsies. Although the deep learning models were originally trained for a completely different classification task and no additional fine-tuning is performed on them, we achieve a highly remarkable classification performance of 0.876 AUC. We investigate different types of image preprocessing and encoding. We also investigate whether the inclusion of the secondary MS2 spectra improves the classification performance. Throughout all tested models, we use standard protein expression vectors as gold standards. Even with our naïve implementation, our results suggest that the application of deep learning and transfer learning techniques might pave the way to the broader usage of raw mass spectrometry data in real-time diagnosis.The open source code used to generate the results from MS images is available on GitHub: https://ibm.biz/mstransc. The raw MS data underlying this article cannot be shared publicly for the privacy of individuals that participated in the study. Processed data including the MS images, their encodings, classification labels and results can be accessed at the following link: https://ibm.box.com/v/mstc-supplementary.Supplementary data are available at Bioinformatics online.}",
+    issn = {1367-4803},
+    doi = {10.1093/bioinformatics/btab311},
+    url = {https://doi.org/10.1093/bioinformatics/btab311},
+    eprint = {https://academic.oup.com/bioinformatics/article-pdf/37/Supplement\_1/i245/38921531/btab311\_supplementary\_data.pdf},
+}
+```
